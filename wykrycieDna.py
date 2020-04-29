@@ -6,7 +6,7 @@ w tym samym miejscu co projekt. Jeśli lokalizacja plików video jest inna zmie�
 Zamknięcie aktualnego filmu i przejście do następnego -> wciśnij klawisz 'q'
 
 Sposób działania:
-
+ - Obcięcie części obrazka (od 2,5m do Dużego menu)
  - Zamiana koloru na odcienie szarości
  - Zamknięcie morfologiczne
  - Progowanie
@@ -15,8 +15,7 @@ Sposób działania:
  - Wykluczenie konturów krótszych niż X
  - Prezentacja
 
-TODO Usunięcie menu
-todo Obcięcie części obrazka (wstępnie od 2,5m do Dużego menu)
+TODO
 todo Usunięcie małych menu (przyciski na obrazie wpływają na wynik)
 todo Wyciągnięcie współrzędnych konturów (Może się przydać do obrazowania głębokości)
 """
@@ -45,9 +44,12 @@ for name in videonames:
     while (cap.isOpened()):
         # Capture frame-by-frame
         ret, frame = cap.read()
-
+        framecopy = frame.copy()
         if ret == True:
-            frameGray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            #Cutting bottom menu from frames
+            framecopy=framecopy[0:720, 0:1280]
+            framecopy = framecopy[250:720,0:1280]
+            frameGray = cv2.cvtColor(framecopy, cv2.COLOR_BGR2GRAY)
             frameGray = cv2.morphologyEx(frameGray, cv2.MORPH_CLOSE, kernel)
             thresh, frameGray= cv2.threshold(frameGray,50,255,cv2.THRESH_BINARY_INV)
             frameGray = cv2.morphologyEx(frameGray, cv2.MORPH_OPEN,kernel)
@@ -59,10 +61,10 @@ for name in videonames:
             for i in range(len(contours)):
                 if cv2.arcLength(contours[i],False)>800:
                     contoursToDraw.append(contours[i])
-
             edgesColors = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
             final = frame.copy()
-            cv2.drawContours(final,contoursToDraw,-1,(0,255,255),2)
+            final[250:720,0:1280] = framecopy
+            cv2.drawContours(final,contoursToDraw,-1,(0,255,255),2,offset=(0,250))
             cv2.imshow('Input', frame)
             cv2.imshow('Final', final)
             # Press Q on keyboard to  exit
