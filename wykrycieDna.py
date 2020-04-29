@@ -44,8 +44,9 @@ for name in videonames:
     while (cap.isOpened()):
         # Capture frame-by-frame
         ret, frame = cap.read()
-        framecopy = frame.copy()
+        
         if ret == True:
+            framecopy = frame.copy()
             #Cutting bottom menu from frames
             framecopy=framecopy[0:720, 0:1280]
             framecopy = framecopy[250:720,0:1280]
