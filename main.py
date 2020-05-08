@@ -5,7 +5,7 @@ w tym samym miejscu co projekt. Jeśli lokalizacja plików video jest inna zmie�
 
 Zamknięcie aktualnego filmu i przejście do następnego -> wciśnij klawisz 'q'
 """
-
+from findFish import findfish
 from filterFrame import *
 from findSeabed import *
 import cv2
@@ -18,21 +18,27 @@ sourcePath = 'videos\\'
 
 for name in videonames:
 
-    cap = cv2.VideoCapture(sourcePath + name +'.mp4')
+    cap = cv2.VideoCapture(sourcePath + name + '.mp4')
 
-    if (cap.isOpened()== False):
-      print("Error opening video file"+sourcePath + name +'.mp4')
+    if not cap.isOpened():
+        print("Error opening video file"+sourcePath + name + '.mp4')
 
-    while (cap.isOpened()):
+    framecnt = 0
+
+    while cap.isOpened():
         # Capture frame-by-frame
         ret, frame = cap.read()
 
-        if ret == True:
+        framecnt += 1
+
+        if ret:
             framecopy = frame.copy()
             framecopy = filterFrame(framecopy)
             contoursToDraw = findSeabed(framecopy)
+
             final = frame.copy()
-            cv2.drawContours(final,contoursToDraw,-1,(0,255,255),2,offset=(0,250))
+            findfish(framecopy, final)
+            cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
             cv2.imshow('Input', frame)
             cv2.imshow('Final', final)
             # Press Q on keyboard to  exit
