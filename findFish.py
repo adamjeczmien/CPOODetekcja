@@ -1,58 +1,84 @@
 """
-    Rzeczy znalezc rybę potrzebuję.
-    Odcienie szarości / maska na kolory ryby,
-    Usuniecie Dna, patrzenie tylko powyzej dna
+A więc aby znalezc rybę patrzymy na cały Frame
+Chcemy jednak aby nie zaznaczało nam Dna jako ROI.
+Aby tak było wyznaczamy Obwiednie Czarnych obszarów we Frame'ie.
+Następnie zawsze wybieramy najwiekszy(przy założeniu, że dno jest niżej a nie wyżej -> nie nadaje się na płytkie wody).
+Gdy mamy największy Fillujemy go kolorem Białym.
+Następnie posiadając maskę, która czarna jest dla dna i poniżej możemy BITWISE_AND co pozwoli na wyciecie Dna z obszaru,
+w którym może pojawić się ROI.
 
-    Zaznaczenie ROI i narysowanie.
-
-    potrzebne : - Usuniecie Menu
-               - zaznacznie głębokości dna tak około (pomoże w zaznaczeniu do ilu pikseli skanować obraz)
+TODO: Do usunięcia, CYFRY i Statek po prawej z obszaru o możliwym ROI. Teoretycznie gdyby zrobić maskę lepszą to
+      nie uwzględniałaby właśnie bszaru cyfr, jednakże jeszcze nie wiem jak to zrobić.
 """
 import numpy as np
 import cv2
 
 
-def findfish(frame, final):
-    n = 5
-
-    frame = frame[0:500, 0:1280]
+def findfish(frame, final, n_pix_enlarge=0):
+    frame = frame[0:720, 0:1280]
     frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     kernel = np.ones((11, 11), np.uint8)
     frame_gray = cv2.morphologyEx(frame_gray, cv2.MORPH_CLOSE, kernel)
-    thresh, frame_gray = cv2.threshold(frame_gray, 60, 255, cv2.THRESH_BINARY)
+    thresh, frame_gray = cv2.threshold(frame_gray, 50, 255, cv2.THRESH_BINARY)
+    thresh_inv, frame_gray_inv = cv2.threshold(frame_gray, 0, 120, cv2.THRESH_BINARY_INV)
+
     frame_gray = cv2.morphologyEx(frame_gray, cv2.MORPH_OPEN, kernel)
     frame_gray = cv2.morphologyEx(frame_gray, cv2.MORPH_CLOSE, kernel)
 
-    # cv2.imshow('rybka_gray', frameGray)
+    frame_gray_inv = cv2.morphologyEx(frame_gray_inv, cv2.MORPH_OPEN, kernel)
+    frame_gray_inv = cv2.morphologyEx(frame_gray_inv, cv2.MORPH_CLOSE, kernel)
 
+    # Odcinanie Dna
+    contours, hierarchy = cv2.findContours(frame_gray_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # bierzemy pod uwagę tylko największą obwiednie
+    # ( problematyczne będzie to gdy ta obwiednia będzie nie na górze a na dole no ale cóż)
+    contour_max = 0
+    perimeter_max = 0
+    for cidx, contour in enumerate(contours):
+        if cv2.arcLength(contour, True) > perimeter_max:
+            contour_max = contour
+            perimeter_max = cv2.arcLength(contour, True)
+
+    # Konstrukcja Maski
+    mask = np.zeros([720, 1280], np.uint8)
+    cv2.drawContours(mask, [contour_max], -1, 255, -1)
+    cv2.imshow('rybka_gray', mask)
+
+    # Nałożenie maski
+    frame_gray = cv2.bitwise_and(mask, frame_gray)
+    cv2.imshow('frame_gray', frame_gray)
+
+    # FISHY FINDERS
     contours = cv2.findContours(frame_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]
 
+    # Rysowanie Prostokątów ROI
     cnt = 0
     for c in contours:
         x1, y1, x2, y2 = cv2.boundingRect(c)
 
+        # powiększanie o N tak aby nie wychodził on poza image
         # Żeby upewnić się, że kwadrat nie bedzie chcial dostac sie po przesunieciu poza obszar obrazka
-        if x1 - n > 0:
-            x_start = x1 - n
+        if x1 - n_pix_enlarge > 0:
+            x_start = x1 - n_pix_enlarge
         else:
             x_start = 0
 
-        if y1 - n > 0:
-            y_start = y1 - n
+        if y1 - n_pix_enlarge > 0:
+            y_start = y1 - n_pix_enlarge
         else:
             y_start = 0
 
-        if x1 + x2 + n < frame.shape[1]:
-            sum_x = x1 + x2 + n
+        if x1 + x2 + n_pix_enlarge < frame.shape[1]:
+            sum_x = x1 + x2 + n_pix_enlarge
         else:
             sum_x = frame.shape[1]
 
-        if y1 + y2 + n < frame.shape[0]:
-            sum_y = y1 + y2 + n
+        if y1 + y2 + n_pix_enlarge < frame.shape[0]:
+            sum_y = y1 + y2 + n_pix_enlarge
         else:
             sum_y = frame.shape[0]
 
         cv2.rectangle(final, (x_start, y_start), (sum_x, sum_y), (36, 255, 120), 2)
+        cv2.putText(final, f"Fishie_{cnt}", (sum_x-20, y_start-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (36, 255, 120))
         cnt += 1
-

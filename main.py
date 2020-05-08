@@ -1,7 +1,7 @@
 """READ ME
 
-Skrypt działa, przy założeniu, że pliki video znajdują się w folderze o nazwie 'video'. Foler ten powinien być zlokalizowany
-w tym samym miejscu co projekt. Jeśli lokalizacja plików video jest inna zmień obiekt 'sourcePath'.
+Skrypt działa, przy założeniu, że pliki video znajdują się w folderze o nazwie 'video'. Folder ten powinien
+być zlokalizowany w tym samym miejscu co projekt. Jeśli lokalizacja plików video jest inna zmień obiekt 'sourcePath'.
 
 Zamknięcie aktualnego filmu i przejście do następnego -> wciśnij klawisz 'q'
 """
@@ -37,7 +37,7 @@ for name in videonames:
             contoursToDraw = findSeabed(framecopy)
 
             final = frame.copy()
-            findfish(framecopy, final)
+            findfish(framecopy, final, n_pix_enlarge=30)
             cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
             cv2.imshow('Input', frame)
             cv2.imshow('Final', final)
