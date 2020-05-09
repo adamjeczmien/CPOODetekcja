@@ -47,11 +47,11 @@ def findfish(frame, final, n_pix_enlarge=0):
     cv2.drawContours(mask, [contour_max], -1, 255, -1)
     # Boat i Numbers na czarno ponieważ to nie są obszary, w których chcemy szukać
     cv2.drawContours(mask, [pts_numbers,  pts_boat], -1, 0, -1)
-    cv2.imshow('rybka_gray', mask)
+    #cv2.imshow('rybka_gray', mask)
 
     # Nałożenie maski
     frame_gray = cv2.bitwise_and(mask, frame_gray)
-    cv2.imshow('frame_gray', frame_gray)
+    #cv2.imshow('frame_gray', frame_gray)
 
     # FISHY FINDERS
     contours = cv2.findContours(frame_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
