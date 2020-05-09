@@ -7,8 +7,6 @@ Gdy mamy największy Fillujemy go kolorem Białym.
 Następnie posiadając maskę, która czarna jest dla dna i poniżej możemy BITWISE_AND co pozwoli na wyciecie Dna z obszaru,
 w którym może pojawić się ROI.
 
-TODO: Do usunięcia, CYFRY i Statek po prawej z obszaru o możliwym ROI. Teoretycznie gdyby zrobić maskę lepszą to
-      nie uwzględniałaby właśnie bszaru cyfr, jednakże jeszcze nie wiem jak to zrobić.
 """
 import numpy as np
 import cv2
@@ -39,9 +37,16 @@ def findfish(frame, final, n_pix_enlarge=0):
             contour_max = contour
             perimeter_max = cv2.arcLength(contour, True)
 
-    # Konstrukcja Maski
+    # Odcinanie cyfr i łódki - Hardcode
+    pts_numbers = np.array([[0, 0], [1279, 0], [535, 60], [0, 375]], np.int32).reshape((-1, 1, 2))
+    pts_boat = np.array([[1120, 15], [1250, 15], [1250, 150], [1120, 150]], np.int32).reshape((-1, 1, 2))
+
+    # Konstrukcja Maski - czarne nie jest brane pod uwagę
     mask = np.zeros([720, 1280], np.uint8)
+    # Contours MAX określa region, który chcemy widzieć więc na biało
     cv2.drawContours(mask, [contour_max], -1, 255, -1)
+    # Boat i Numbers na czarno ponieważ to nie są obszary, w których chcemy szukać
+    cv2.drawContours(mask, [pts_numbers,  pts_boat], -1, 0, -1)
     cv2.imshow('rybka_gray', mask)
 
     # Nałożenie maski
