@@ -9,10 +9,10 @@ Sposób działania:
  - Znalezienie krawędzi - filtr cannyego
  - Wykluczenie konturów krótszych niż X
  - Prezentacja
+ - Zwracanie wszystkich punktów, ktore naleza do konturu dna
 
 TODO
 todo Usunięcie małych menu (przyciski na obrazie wpływają na wynik)
-todo Wyciągnięcie współrzędnych konturów (Może się przydać do obrazowania głębokości)
 """
 
 import cv2
@@ -29,7 +29,7 @@ def findSeabed(frame):
     frameGray = cv2.morphologyEx(frameGray, cv2.MORPH_OPEN, kernel)
     frameGray = cv2.morphologyEx(frameGray, cv2.MORPH_CLOSE, kernel)
     edges = cv2.Canny(frameGray, 50, 50)
-    contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE) # zwracaj wszystkie punkty
     contoursToDraw = contours.copy()
     contoursToDraw.clear()
     for i in range(len(contours)):
