@@ -9,6 +9,7 @@ from findFish import findfish
 from filterFrame import *
 from findSeabed import *
 from dataAnalysisFuntions import *
+from interface import *
 import cv2
 
 # UWAGA!
@@ -30,6 +31,17 @@ for name in videosNames:
     if not cap.isOpened():
         print("Error opening video file"+sourcePath + name + '.mp4')
 
+    init_player(cap)
+    run_player()
+    close_player()
+
+
+    #calculate 3D plot
+    cap = cv2.VideoCapture(sourcePath + name + '.mp4')
+
+    if not cap.isOpened():
+        print("Error opening video file"+sourcePath + name + '.mp4')
+
     framecnt = 0
     # list of dataframes used to generate point cloud
     data = []
@@ -38,7 +50,6 @@ for name in videosNames:
         ret, frame = cap.read()
 
         framecnt += 1
-
         if ret:
             framecopy = frame.copy()
             framecopy = filterFrame(framecopy)
@@ -48,12 +59,12 @@ for name in videosNames:
             findfish(framecopy, final, n_pix_enlarge=30)
             df = createDataFrameFromContours(contoursToDraw.copy())
             data.append(df)
-            cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
-            cv2.imshow('Input', frame)
-            cv2.imshow('Final', final)
+            #cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
+            #cv2.imshow('Input', frame)
+            #cv2.imshow('Final', final)
             # Press Q on keyboard to  exit
-            if cv2.waitKey(25) & 0xFF == ord('q'):
-                break
+            #if cv2.waitKey() & 0xFF == ord('q'):
+            #    break
         else:
             break
     # When everything done, release the video capture object
