@@ -16,7 +16,7 @@ import cv2
 # Mozna sobie obejrzec wykres dna dla kolejnych wideo ale nie daje gwarancji, ze program sie dokonczy wykonywac
 # Bo niektore chmury potrzebuja zbyt duzej ilosci pamieci
 showPlot = False
-calc3D = False
+calc3D = True
 
 videosNames = ['video_20190706_2019-07-06_174249', 'video_20190708_2019-07-08_182109', 'video_20190708_2019-07-08_182702',
               'video_20190708_2019-07-08_183022','video_20190708_2019-07-08_183118','video_20190708_2019-07-08_183217',
@@ -26,15 +26,16 @@ videosNames = ['video_20190706_2019-07-06_174249', 'video_20190708_2019-07-08_18
 sourcePath = 'videos\\'
 cloud = []
 for name in videosNames:
-    print("Video :" + name)
     cap = cv2.VideoCapture(sourcePath + name + '.mp4')
 
     if not cap.isOpened():
         print("Error opening video file"+sourcePath + name + '.mp4')
     else:
+        print("Playing video: " + name)
         init_player(cap)
         run_player()
         close_player()#in this procedure videoCapture is closed
+        print("End of the video: " + name )
 
     if calc3D:
         #calculate 3D plot
@@ -46,6 +47,8 @@ for name in videosNames:
         framecnt = 0
         # list of dataframes used to generate point cloud
         data = []
+
+        print('Beginning of the calculation of the seabed')
         while cap.isOpened():
             # Capture frame-by-frame
             ret, frame = cap.read()

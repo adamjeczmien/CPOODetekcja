@@ -154,7 +154,8 @@ def run_player():
 def close_player():
     global videoCap
     videoCap.release()
-    cv2.destroyAllWindows()
+    cv2.destroyWindow(windowName)
+    cv2.destroyWindow(windowName2)
 
 
 
