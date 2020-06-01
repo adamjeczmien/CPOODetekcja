@@ -16,16 +16,16 @@ sourcePath = 'videos\\'
 
 
 def init_player(cap):
-    global frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec, changeFrame, maxFrames, windowName, windowName2, videoCap#, previous10Frames, next10Frames
+    global frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec, changeFrame, maxFrames, windowName, windowName2, videoCap, nextFilm
     # button dimensions (y1,y2,x1,x2)
     #previous10Frames = [20, 60, 55, 95]
     previousFrame = [20,60,105,145]
     playButton = [20,60,155,245]
     nextFrame = [20,60,255,295]
-    #next10Frames = [20, 60, 305, 345]
+    nextFilm = [20, 60, 305, 345]
 
-    playFilm = 0
-    changeFrame = 1
+    playFilm = 1
+    changeFrame = 0
     windowName = 'Input'
     windowName2 = 'Output'
 
@@ -49,6 +49,7 @@ def add_buttons_to_image(image):
     control_image[previousFrame[0]:previousFrame[1],previousFrame[2]:previousFrame[3]] = 180
     control_image[playButton[0]:playButton[1],playButton[2]:playButton[3]] = 180
     control_image[nextFrame[0]:nextFrame[1],nextFrame[2]:nextFrame[3]] = 180
+    control_image[nextFilm[0]:nextFilm[1], nextFilm[2]:nextFilm[3]] = 180
 
     cv2.putText(control_image, '<',(previousFrame[2]+12,previousFrame[0]+30),cv2.FONT_HERSHEY_PLAIN, 2,(0),3)
     if playFilm == 0:
@@ -56,12 +57,13 @@ def add_buttons_to_image(image):
     else:
         cv2.putText(control_image, 'Stop', (playButton[2] + 12, playButton[0] + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0), 3)
     cv2.putText(control_image, '>',(nextFrame[2]+12,nextFrame[0]+30),cv2.FONT_HERSHEY_PLAIN, 2,(0),3)
+    cv2.putText(control_image, '>|', (nextFilm[2] + 8, nextFilm[0] + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0), 3)
 
     #plot current frame
     frame = int(videoCap.get(cv2.CAP_PROP_POS_FRAMES))
 
     textInfo = 'Frame:  '+str(frame)+'/' + str(maxFrames)
-    cv2.putText(control_image, textInfo, (nextFrame[3]+20,nextFrame[0]+30), cv2.FONT_HERSHEY_PLAIN, 2, (180), 3)
+    cv2.putText(control_image, textInfo, (nextFilm[3]+20,nextFilm[0]+30), cv2.FONT_HERSHEY_PLAIN, 2, (180), 3)
 
 
     control_image = cv2.cvtColor(control_image, cv2.COLOR_GRAY2BGR)
@@ -98,6 +100,11 @@ def process_click(event, x, y,flags, params):
         if y > nextFrame[0] and y < nextFrame[1] and x > nextFrame[2] and x < nextFrame[3]:
             if changeFrame == 0:
                 playFilm = 0
+                changeFrame = 1
+        if y > nextFilm[0] and y < nextFilm[1] and x > nextFilm[2] and x < nextFilm[3]:
+            if changeFrame == 0:
+                videoCap.set(cv2.CAP_PROP_POS_FRAMES, videoCap.get(cv2.CAP_PROP_FRAME_COUNT))
+                playFilm = 1
                 changeFrame = 1
                 #videoCap.set(cv2.CAP_PROP_POS_FRAMES, val)
                 #cv2.setTrackbarPos('Frame', windowName, val)
