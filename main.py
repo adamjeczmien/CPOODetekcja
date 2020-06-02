@@ -57,17 +57,15 @@ for name in videosNames:
             final = frame.copy()
             findfish(framecopy, final, n_pix_enlarge=30)
 
-
             df = createDataFrameFromContours(contoursToDraw.copy())
             data.append(df)
             cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
 
             out_film2.write(final)
-            #cv2.imshow('Input', frame)
-            #cv2.imshow('Final', final)
+            cv2.imshow('Final', final)
             # Press Q on keyboard to  exit
-            #if cv2.waitKey() & 0xFF == ord('q'):
-            #    break
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
         else:
             break
 
@@ -79,7 +77,6 @@ for name in videosNames:
 
     # When everything done, release the video capture object
     cap.release()
-
 
     # Closes all the frames
     cv2.destroyAllWindows()
