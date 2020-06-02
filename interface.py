@@ -15,26 +15,29 @@ sourcePath = 'videos\\'
 
 
 
-def init_player(cap):
-    global frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec, changeFrame, maxFrames, windowName, windowName2, videoCap, nextFilm
+def init_player(film1, film2):
+    global film_in, film_out, frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec, changeFrame, maxFrames, windowName, windowName2, videoCap, nextFilm, frameNumber
     # button dimensions (y1,y2,x1,x2)
     #previous10Frames = [20, 60, 55, 95]
-    previousFrame = [20,60,105,145]
-    playButton = [20,60,155,245]
-    nextFrame = [20,60,255,295]
-    nextFilm = [20, 60, 305, 345]
+    previousFrame = [20,60,5,45]
+    playButton = [20,60,55,145]
+    nextFrame = [20,60,155,195]
+    nextFilm = [20, 60, 205, 245]
 
     playFilm = 1
     changeFrame = 0
+    frameNumber= 0
     windowName = 'Input'
     windowName2 = 'Output'
 
-    videoCap = cap
-    width = videoCap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    height = videoCap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    film_out = cv2.VideoCapture(film2)
+    film_in = cv2.VideoCapture(film1)
+
+    width = film_in.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = film_in.get(cv2.CAP_PROP_FRAME_HEIGHT)
     frameSize = [int(height), int(width)]
-    framePerSec = int(videoCap.get(cv2.CAP_PROP_FPS))
-    maxFrames = int(videoCap.get(cv2.CAP_PROP_FRAME_COUNT))
+    maxFrames = int(film_in.get(cv2.CAP_PROP_FRAME_COUNT))
+
 
     cv2.namedWindow(windowName)
     cv2.setMouseCallback(windowName, process_click)
@@ -43,7 +46,7 @@ def init_player(cap):
 
 
 def add_buttons_to_image(image):
-    global frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec
+    global frameSize, previousFrame, playButton, nextFrame, playFilm, framePerSec, frameNumber
     control_image = np.zeros((frameSize[0]+100,frameSize[1]), np.uint8)
 
     control_image[previousFrame[0]:previousFrame[1],previousFrame[2]:previousFrame[3]] = 180
@@ -60,9 +63,8 @@ def add_buttons_to_image(image):
     cv2.putText(control_image, '>|', (nextFilm[2] + 8, nextFilm[0] + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0), 3)
 
     #plot current frame
-    frame = int(videoCap.get(cv2.CAP_PROP_POS_FRAMES))
 
-    textInfo = 'Frame:  '+str(frame)+'/' + str(maxFrames)
+    textInfo = 'Frame:  '+str(int(film_in.get(cv2.CAP_PROP_POS_FRAMES)))+'/' + str(maxFrames)
     cv2.putText(control_image, textInfo, (nextFilm[3]+20,nextFilm[0]+30), cv2.FONT_HERSHEY_PLAIN, 2, (180), 3)
 
 
@@ -78,15 +80,18 @@ def process_click(event, x, y,flags, params):
     # check if the click is within the dimensions of the button
     global playFilm
     global changeFrame
-    global videoCap
-    global maxFrames
+    global maxFrames, frameNumber
+    global previousFrame, playButton, nextFrame, nextFilm
+
     if event == cv2.EVENT_LBUTTONDOWN:
         if y > previousFrame[0] and y < previousFrame[1] and x > previousFrame[2] and x < previousFrame[3]:
-            val = int(videoCap.get(cv2.CAP_PROP_POS_FRAMES))-2
+            val = film_in.get(cv2.CAP_PROP_POS_FRAMES)-2
             if val >= 0 & changeFrame == 0:
+                film_in.set(cv2.CAP_PROP_POS_FRAMES, val)
+                film_out.set(cv2.CAP_PROP_POS_FRAMES, val)
                 playFilm = 0
                 changeFrame = 1
-                videoCap.set(cv2.CAP_PROP_POS_FRAMES, val)
+                frameNumber = val
                 #cv2.setTrackbarPos('Frame', windowName, val)
         if y > playButton[0] and y < playButton[1] and x > playButton[2] and x < playButton[3]:
             changeFrame = 0
@@ -103,7 +108,8 @@ def process_click(event, x, y,flags, params):
                 changeFrame = 1
         if y > nextFilm[0] and y < nextFilm[1] and x > nextFilm[2] and x < nextFilm[3]:
             if changeFrame == 0:
-                videoCap.set(cv2.CAP_PROP_POS_FRAMES, videoCap.get(cv2.CAP_PROP_FRAME_COUNT))
+                film_in.set(cv2.CAP_PROP_POS_FRAMES, maxFrames)
+                film_out.set(cv2.CAP_PROP_POS_FRAMES, maxFrames)
                 playFilm = 1
                 changeFrame = 1
                 #videoCap.set(cv2.CAP_PROP_POS_FRAMES, val)
@@ -112,38 +118,24 @@ def process_click(event, x, y,flags, params):
 
 
 def run_player():
-    global videoCap, windowName, windowName2, playFilm, changeFrame
+    global videoCap, windowName, windowName2, playFilm, changeFrame, frameNumber, maxFrames, film_in, film_out
     #data = []
-    while videoCap.isOpened():
+    while film_in.isOpened() & film_out.isOpened():
         if playFilm == 1:
-            ret, frame = videoCap.read()
-            if ret:
-                framecopy = frame.copy()
-                framecopy = filterFrame(framecopy)
-                contoursToDraw = findSeabed(framecopy)
-
-                final = frame.copy()
-                findfish(framecopy, final, n_pix_enlarge=30)
-                #df = createDataFrameFromContours(contoursToDraw.copy())
-                cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
-                cv2.imshow(windowName, add_buttons_to_image(frame))
-                cv2.imshow(windowName2, add_buttons_to_image(final))
+            ret_in, frame_in = film_in.read()
+            ret_out, frame_out = film_out.read()
+            if ret_out & ret_in:
+                cv2.imshow(windowName, add_buttons_to_image(frame_in))
+                cv2.imshow(windowName2, add_buttons_to_image(frame_out))
             else:
                 break
         else:
             if changeFrame == 1:
-                ret, frame = videoCap.read()
-                if ret:
-                    framecopy = frame.copy()
-                    framecopy = filterFrame(framecopy)
-                    contoursToDraw = findSeabed(framecopy)
-
-                    final = frame.copy()
-                    findfish(framecopy, final, n_pix_enlarge=30)
-                    #df = createDataFrameFromContours(contoursToDraw.copy())
-                    cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
-                    cv2.imshow(windowName, add_buttons_to_image(frame))
-                    cv2.imshow(windowName2, add_buttons_to_image(final))
+                ret_in, frame_in = film_in.read()
+                ret_out, frame_out = film_out.read()
+                if ret_out & ret_in:
+                    cv2.imshow(windowName, add_buttons_to_image(frame_in))
+                    cv2.imshow(windowName2, add_buttons_to_image(frame_out))
                     changeFrame = 0
                 else:
                     break
@@ -152,8 +144,9 @@ def run_player():
 
 
 def close_player():
-    global videoCap
-    videoCap.release()
+    global film_in, film_out
+    film_in.release()
+    film_out.release()
     cv2.destroyWindow(windowName)
     cv2.destroyWindow(windowName2)
 

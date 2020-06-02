@@ -16,7 +16,7 @@ import cv2
 # Mozna sobie obejrzec wykres dna dla kolejnych wideo ale nie daje gwarancji, ze program sie dokonczy wykonywac
 # Bo niektore chmury potrzebuja zbyt duzej ilosci pamieci
 showPlot = False
-calc3D = True
+
 
 videosNames = ['video_20190706_2019-07-06_174249', 'video_20190708_2019-07-08_182109', 'video_20190708_2019-07-08_182702',
               'video_20190708_2019-07-08_183022','video_20190708_2019-07-08_183118','video_20190708_2019-07-08_183217',
@@ -28,65 +28,73 @@ cloud = []
 for name in videosNames:
     cap = cv2.VideoCapture(sourcePath + name + '.mp4')
 
+
+    cap = cv2.VideoCapture(sourcePath + name + '.mp4')
+
     if not cap.isOpened():
         print("Error opening video file"+sourcePath + name + '.mp4')
-    else:
-        print("Playing video: " + name)
-        init_player(cap)
-        run_player()
-        close_player()#in this procedure videoCapture is closed
-        print("End of the video: " + name )
 
-    if calc3D:
-        #calculate 3D plot
-        cap = cv2.VideoCapture(sourcePath + name + '.mp4')
+    framecnt = 0
+    # list of dataframes used to generate point cloud
+    data = []
 
-        if not cap.isOpened():
-            print("Error opening video file"+sourcePath + name + '.mp4')
 
-        framecnt = 0
-        # list of dataframes used to generate point cloud
-        data = []
 
-        print('Beginning of the calculation of the seabed')
-        while cap.isOpened():
-            # Capture frame-by-frame
-            ret, frame = cap.read()
+    out_path = "videos_out\\" + name + "_out.mp4"
+    size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    out_film2 = cv2.VideoWriter(out_path,cv2.VideoWriter_fourcc('M','P','4','V'), cap.get(cv2.CAP_PROP_FPS), size)
 
+    print('Beginning of the calculation of the seabed')
+    while cap.isOpened():
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        if ret:
             framecnt += 1
-            if ret:
-                framecopy = frame.copy()
-                framecopy = filterFrame(framecopy)
-                contoursToDraw = findSeabed(framecopy)
+            framecopy = frame.copy()
+            framecopy = filterFrame(framecopy)
+            contoursToDraw = findSeabed(framecopy)
 
-                final = frame.copy()
-                findfish(framecopy, final, n_pix_enlarge=30)
-                df = createDataFrameFromContours(contoursToDraw.copy())
-                data.append(df)
-                #cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
-                #cv2.imshow('Input', frame)
-                #cv2.imshow('Final', final)
-                # Press Q on keyboard to  exit
-                #if cv2.waitKey() & 0xFF == ord('q'):
-                #    break
-            else:
-                break
-        # When everything done, release the video capture object
-        cap.release()
-        # Closes all the frames
-        cv2.destroyAllWindows()
-        print("Done with: "+ name + ".mp4")
-        print("Frames of the video: " + str(framecnt))
-        print("Calculating cloud for: " + name + ".mp4")
-        dataFinal = createPointCloud(data)
-        if showPlot:
-            print("Creating 3D plot for: " + name + ".mp4")
-            make3DPlotForDataFrame(dataFinal)
-        cloud.append(dataFinal)
-        print("Video :" + name + " finished")
+            final = frame.copy()
+            findfish(framecopy, final, n_pix_enlarge=30)
 
-if calc3D:
-    for i in range(len(cloud)):
-        print("Data Points cloud for: " + videosNames[int(i) - 1] + ".mp4")
-        print(cloud[int(i)-1])
+
+            df = createDataFrameFromContours(contoursToDraw.copy())
+            data.append(df)
+            cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
+
+            out_film2.write(final)
+            #cv2.imshow('Input', frame)
+            #cv2.imshow('Final', final)
+            # Press Q on keyboard to  exit
+            #if cv2.waitKey() & 0xFF == ord('q'):
+            #    break
+        else:
+            break
+
+    print('Saving output video to' + out_path)
+    out_film2.release()
+
+    init_player(sourcePath + name + '.mp4', out_path)
+    run_player()
+
+    # When everything done, release the video capture object
+    cap.release()
+
+
+    # Closes all the frames
+    cv2.destroyAllWindows()
+    print("Done with: "+ name + ".mp4")
+    print("Frames of the video: " + str(framecnt))
+    print("Calculating cloud for: " + name + ".mp4")
+    dataFinal = createPointCloud(data)
+    if showPlot:
+        print("Creating 3D plot for: " + name + ".mp4")
+        make3DPlotForDataFrame(dataFinal)
+    cloud.append(dataFinal)
+    print("Video :" + name + " finished")
+
+
+for i in range(len(cloud)):
+    print("Data Points cloud for: " + videosNames[int(i) - 1] + ".mp4")
+    print(cloud[int(i)-1])
 
