@@ -57,7 +57,8 @@ for name in videosNames:
             final = frame.copy()
             findfish(framecopy, final, n_pix_enlarge=30)
 
-            df = createDataFrameFromContours(contoursToDraw.copy())
+            centerDepth = getDepthInMeters(final)
+            df = createDataFrameFromContours(contoursToDraw.copy(), centerDepth)
             data.append(df)
             cv2.drawContours(final, contoursToDraw, -1, (0, 255, 255), 2, offset=(0, 250))
 
